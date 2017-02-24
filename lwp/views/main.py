@@ -11,7 +11,7 @@ from flask import Blueprint, request, session, g, redirect, url_for, abort, rend
 
 import lwp
 import lwp.lxclite as lxc
-from lwp.utils import query_db, if_logged_in, get_bucket_token, hash_passwd, read_config_file, cgroup_ext
+from lwp.utils import query_db, if_logged_in, get_bucket_token, hash_passwd, read_config_file, cgroup_ext, Multiplex
 from lwp.views.auth import AUTH
 
 # TODO: see if we can move this block somewhere better
@@ -26,6 +26,8 @@ except ConfigParser.NoOptionError:
 
 
 storage_repos = config.items('storage_repository')
+multiplex = {}
+global multiplex
 
 # Flask module
 mod = Blueprint('main', __name__)
@@ -125,6 +127,38 @@ def edit(container=None):
                            settings=cfg, host_memory=host_memory, storage_repos=storage_repos, regex=regex,
                            clonable_containers=lxc.listx()['STOPPED'])
 
+@mod.route('/<container>/shell', methods=['POST', 'GET'])
+@if_logged_in()
+def shell(container=None):
+    """
+    shell container page
+    """
+    return render_template('shell.html', container=container)
+
+@mod.route('/<container>/u', methods=['GET'])
+@if_logged_in()
+def handle_shell_requests(container=None):
+    """
+    shell requests handler
+    """
+    if request.method == 'GET':
+      try:
+        sid = int(request.values['s'])
+        k = request.values['k']
+        w = int(request.values['w'])
+        h = int(request.values['h'])
+        cmd = 'lxc-attach -n ' + container
+        if not sid in multiplex:
+          multiplex[sid] = Multiplex(cmd, 'xterm-color')
+        if multiplex[sid].proc_keepalive(sid, w, h):
+          if k:
+            multiplex[sid].proc_write(sid, k)
+          time.sleep(0.002)
+          return '<?xml version="1.0" encoding="UTF-8"?>' + multiplex[sid].proc_dump(sid)
+        else:
+          return abort(400)	
+      except (KeyError, ValueError, IndexError):
+        return abort(400)
 
 @mod.route('/settings/lxc-net', methods=['POST', 'GET'])
 @if_logged_in()

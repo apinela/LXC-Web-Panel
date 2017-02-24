@@ -78,6 +78,7 @@
                                     <a class="btn btn-small{% if status.status == 'running' %} disabled{% endif %}"{% if status.status == 'stopped' or status.status == 'frozen' %} href="{{ url_for('main.action', name=container.name, action=start_action[status.status]) }}"{% endif %}><i class="icon-play"></i> Start</a>
                                     <a class="btn btn-small{% if status.status == 'stopped' %} disabled{% endif %}"{% if status.status == 'running' or status.status == 'frozen' %} href="{{ url_for('main.action', name=container.name, action='stop') }}"{% endif %}><i class="icon-stop"></i> Stop</a>
                                     <a class="btn btn-small{% if status.status == 'frozen' or status.status == 'stopped' %} disabled{% endif %} hidden-phone"{% if status.status == 'running' %} href="{{ url_for('main.action', name=container.name, action='freeze') }}"{% endif %}><i class="icon-pause"></i> Freeze</a>
+                                    <a class="btn btn-small{% if status.status != 'running' %} disabled{% endif %}" href="{{ url_for('main.shell',container=container.name) }}" target="_blank"> <i class="icon-share"></i> Terminal</a></span>
                                 </div>
                                 {% if session.su == 'Yes' and status.status == 'stopped' %}<a class="pull-right close destroy" data-container-name="{{container.name}}" style="margin-top:4px;"><i class="icon-remove-sign"></i></a>{% endif %}
                             </div>
